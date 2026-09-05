@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="100" viewBox="0 0 240 100">
+  <rect width="240" height="100" fill="#f3f4f6"/>
+  <rect x="1" y="1" width="238" height="98" fill="none" stroke="#d1d5db" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="120" y="46" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#9ca3af" text-anchor="middle">YOUR LOGO</text>
+  <text x="120" y="64" font-family="Arial, sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">logo-6.svg</text>
+</svg>
