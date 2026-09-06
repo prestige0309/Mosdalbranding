@@ -2,6 +2,13 @@ import { Link } from "react-router-dom";
 import { Printer, MapPin, Phone, Mail, Clock, Instagram, Facebook } from "lucide-react";
 
 const Footer = () => {
+  // Define the TikTok icon as a separate component
+  const TikTokIcon = () => (
+    <span className="font-bold text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+      T
+    </span>
+  );
+
   return (
     <footer className="bg-brand-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
@@ -24,11 +31,7 @@ const Footer = () => {
                 { icon: Instagram, href: "https://www.instagram.com/mosdal_branding_solutions?stkn=MWF0MWZ0ZzJvYjVpZw%3D%3D&utm_source=qr" },
                 { icon: Facebook, href: "#" },
                 { 
-                  icon: () => (
-                    <span className="font-bold text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
-                      T
-                    </span>
-                  ), 
+                  icon: TikTokIcon, 
                   href: "https://www.tiktok.com/@mosdal_branding_solution?_r=1&_t=ZS-99UBNJuKuxh" 
                 },
               ].map(({ icon: Icon, href }, i) => (
@@ -36,8 +39,10 @@ const Footer = () => {
                   key={i}
                   href={href}
                   className="w-9 h-9 bg-white/10 hover:bg-brand-orange rounded flex items-center justify-center transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  {typeof Icon === 'function' ? <Icon /> : <Icon className="w-4 h-4" />}
+                  <Icon className="w-4 h-4" />
                 </a>
               ))}
             </div>

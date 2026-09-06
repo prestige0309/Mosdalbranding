@@ -53,7 +53,7 @@ const About = () => {
             <span className="text-brand-orange">Iconic Brands</span>
           </h1>
           <p className="text-white/65 text-lg max-w-2xl leading-relaxed">
-            Founded in 2018, Mosdal Branding Solution started as a small Lagos print shop with big ambitions. Today, we're a full-service printing and branding powerhouse trusted by over 500 businesses across Nigeria.
+            Founded in 2018, Mosdal Branding Solution started as a small Ibadan print shop with big ambitions. Today, we're a full-service printing and branding powerhouse trusted by over 500 businesses across Nigeria.
           </p>
         </div>
       </section>
@@ -69,7 +69,7 @@ const About = () => {
               </h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Mosdal Branding Solution was born out of a simple observation: Nigerian businesses deserved world-class print and branding quality. In 2018, founder Damilola Olatunji invested in a single large-format printer and a small workspace in Victoria Island. Within six months, word spread fast.
+                  Mosdal Branding Solution was born out of a simple observation: Nigerian businesses deserved world-class print and branding quality. In 2018, founder Moshood Alola invested in a single large-format printer and a small workspace in Victoria Island. Within six months, word spread fast.
                 </p>
                 <p>
                   By 2020, we had outgrown our first studio. We relocated to a 3,000 sqft facility, expanded our team to 12, and invested in industry-leading equipment — from UV flatbed printers to embroidery machines and laser cutters.

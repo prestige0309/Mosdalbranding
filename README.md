@@ -9,7 +9,8 @@ Supabase project:
    tier is enough).
 2. **Run the schema.** Dashboard → SQL Editor → New query → paste the full
    contents of [`supabase/schema.sql`](./supabase/schema.sql) → Run. This
-   creates the four tables, locks them down with Row Level Security, sets
+   creates the four tables, locks them down
+    with Row Level Security, sets
    up the public `portfolio-images` storage bucket, and seeds the site with
    the original demo portfolio/testimonial content.
 3. **Create the admin account.** Dashboard → Authentication → Users → Add
