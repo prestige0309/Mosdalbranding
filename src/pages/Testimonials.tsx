@@ -51,9 +51,10 @@ const Testimonials = () => {
         message: formData.message,
         rating: selectedRating,
       });
-    } catch (error) {
+       } catch (error) {
       console.error("Failed to save testimonial:", error);
-      toast.error("Something went wrong submitting your review. Please try again.");
+      const msg = error instanceof Error ? error.message : String(error);
+      toast.error(`DEBUG (save): ${msg}`, { duration: 15000 });
       setSubmitting(false);
       return;
     }
