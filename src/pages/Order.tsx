@@ -49,9 +49,10 @@ const Order = () => {
         deliveryAddress: form.address,
       });
       setSubmitted(true);
-    } catch (error) {
+        } catch (error) {
       console.error("Failed to save order:", error);
-      toast.error("Something went wrong placing your order. Please try again.");
+      const msg = error instanceof Error ? error.message : String(error);
+      toast.error(`DEBUG: ${msg}`, { duration: 15000 });
     } finally {
       setSubmitting(false);
     }
