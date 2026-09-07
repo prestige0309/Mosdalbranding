@@ -148,46 +148,26 @@ export async function getTestimonials(): Promise<Testimonial[]> {
 }
 
 /** Public: only approved testimonials, for the Testimonials page. */
-export async function getApprovedTestimonials(): Promise<Testimonial[]> {
-  const { data, error } = await supabase
-    .from("testimonials")
-    .select("*")
-    .eq("approved", true)
-    .order("created_at", { ascending: false });
-  throwIfError(error);
-  return (data ?? []).map(mapTestimonial);
-}
-
-export type NewTestimonial = Omit<Testimonial, "id" | "createdAt" | "approved">;
-
 export async function addTestimonial(t: NewTestimonial): Promise<Testimonial> {
-  const { data, error } = await supabase
-    .from("testimonials")
-    .insert({
-      name: t.name,
-      company: t.company,
-      rating: t.rating,
-      message: t.message,
-      avatar_url: t.avatarUrl ?? null,
-      approved: false,
-    })
-    .select()
-    .single();
+  const { error } = await supabase.from("testimonials").insert({
+    name: t.name,
+    company: t.company,
+    rating: t.rating,
+    message: t.message,
+    avatar_url: t.avatarUrl ?? null,
+    approved: false,
+  });
   throwIfError(error);
-  return mapTestimonial(data);
-}
-
-export async function approveTestimonial(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("testimonials")
-    .update({ approved: true })
-    .eq("id", id);
-  throwIfError(error);
-}
-
-export async function rejectTestimonial(id: string): Promise<void> {
-  const { error } = await supabase.from("testimonials").delete().eq("id", id);
-  throwIfError(error);
+  return {
+    id: crypto.randomUUID(),
+    name: t.name,
+    company: t.company,
+    rating: t.rating,
+    message: t.message,
+    avatarUrl: t.avatarUrl,
+    approved: false,
+    createdAt: new Date().toISOString(),
+  };
 }
 
 // ─── Quote Requests ─────────────────────────────────────────────────────
