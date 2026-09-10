@@ -370,3 +370,39 @@ export function onAdminAuthStateChange(callback: (loggedIn: boolean) => void): (
 
   return () => sub.subscription.unsubscribe();
 }
+
+// ─── Export all functions for easier imports ──────────────────────────
+
+export default {
+  // Portfolio
+  getPortfolioItems,
+  addPortfolioItem,
+  updatePortfolioItem,
+  deletePortfolioItem,
+  uploadPortfolioImage,
+  
+  // Testimonials
+  getTestimonials,
+  getApprovedTestimonials,
+  addTestimonial,
+  updateTestimonialApproval,
+  deleteTestimonial,
+  
+  // Quote Requests
+  getQuoteRequests,
+  addQuoteRequest,
+  updateQuoteStatus,
+  deleteQuoteRequest,
+  
+  // Orders
+  getOrders,
+  addOrder,
+  updateOrderStatus,
+  deleteOrder,
+  
+  // Auth
+  adminLogin,
+  adminLogout,
+  isAdminLoggedIn,
+  onAdminAuthStateChange,
+};
