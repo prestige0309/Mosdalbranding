@@ -109,3 +109,13 @@
     "vite": "^5.4.1"
   }
 }
+{
+  "dependencies": {
+    "recharts": "^3.5.0",
+    "three-mesh-bvh": "^0.8.0",
+    "crypto-js": "^4.2.0" // Keep this one, it's still the latest
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5" // Keep this, it's the latest LTS
+  }
+}
