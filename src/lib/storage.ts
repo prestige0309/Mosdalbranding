@@ -8,36 +8,8 @@ import { supabase, ADMIN_EMAIL } from "@/lib/supabaseClient";
 // See supabase/schema.sql for the tables + security rules this relies on.
 // ════════════════════════════════════════════════════════════════════════
 
-// ─── Types ─────────────────────────────────────────────────────────────
-
-export type NewPortfolioItem = Omit<PortfolioItem, "id" | "createdAt">;
-export type NewTestimonial = Omit<Testimonial, "id" | "createdAt" | "approved">;
-export type NewQuoteRequest = Omit<QuoteRequest, "id" | "createdAt" | "status">;
-export type NewOrder = Omit<Order, "id" | "createdAt" | "status" | "total">;
-
-// ─── Utilities ─────────────────────────────────────────────────────────
-
-function throwIfError(error: { message: string } | null): asserts error is null {
+function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
-}
-
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
-}
-
-function validateFile(file: File, maxSizeMB: number = 5): void {
-  const maxBytes = maxSizeMB * 1024 * 1024;
-  if (file.size > maxBytes) {
-    throw new Error(`File size exceeds ${maxSizeMB}MB limit`);
-  }
-  
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (!allowedTypes.includes(file.type)) {
-    throw new Error('File must be a JPEG, PNG, WebP, or GIF image');
-  }
 }
 
 // ─── Mappers: DB (snake_case) ⇆ App types (camelCase) ─────────────────
@@ -48,7 +20,7 @@ const mapPortfolio = (row: any): PortfolioItem => ({
   category: row.category,
   description: row.description,
   imageUrl: row.image_url,
-  featured: row.featured ?? false,
+  featured: row.featured,
   createdAt: row.created_at,
 });
 
@@ -59,7 +31,7 @@ const mapTestimonial = (row: any): Testimonial => ({
   rating: row.rating,
   message: row.message,
   avatarUrl: row.avatar_url ?? undefined,
-  approved: row.approved ?? false,
+  approved: row.approved,
   createdAt: row.created_at,
 });
 
@@ -72,7 +44,7 @@ const mapQuote = (row: any): QuoteRequest => ({
   details: row.details,
   budget: row.budget,
   deadline: row.deadline,
-  status: row.status ?? 'new',
+  status: row.status,
   createdAt: row.created_at,
 });
 
@@ -85,8 +57,8 @@ const mapOrder = (row: any): Order => ({
   quantity: row.quantity,
   specifications: row.specifications,
   deliveryAddress: row.delivery_address,
-  total: row.total ?? 0,
-  status: row.status ?? 'pending',
+  total: row.total,
+  status: row.status,
   createdAt: row.created_at,
 });
 
@@ -97,24 +69,24 @@ export async function getPortfolioItems(): Promise<PortfolioItem[]> {
     .from("portfolio_items")
     .select("*")
     .order("created_at", { ascending: false });
-
   throwIfError(error);
   return (data ?? []).map(mapPortfolio);
 }
+
+export type NewPortfolioItem = Omit<PortfolioItem, "id" | "createdAt">;
 
 export async function addPortfolioItem(item: NewPortfolioItem): Promise<PortfolioItem> {
   const { data, error } = await supabase
     .from("portfolio_items")
     .insert({
-      title: item.title.trim(),
+      title: item.title,
       category: item.category,
-      description: item.description.trim(),
+      description: item.description,
       image_url: item.imageUrl,
-      featured: item.featured ?? false,
+      featured: item.featured,
     })
     .select()
     .single();
-
   throwIfError(error);
   return mapPortfolio(data);
 }
@@ -126,55 +98,31 @@ export async function updatePortfolioItem(
   const { data, error } = await supabase
     .from("portfolio_items")
     .update({
-      title: item.title.trim(),
+      title: item.title,
       category: item.category,
-      description: item.description.trim(),
+      description: item.description,
       image_url: item.imageUrl,
-      featured: item.featured ?? false,
+      featured: item.featured,
     })
     .eq("id", id)
     .select()
     .single();
-
   throwIfError(error);
   return mapPortfolio(data);
 }
 
 export async function deletePortfolioItem(id: string): Promise<void> {
-  const { data: item } = await supabase
-    .from("portfolio_items")
-    .select("image_url")
-    .eq("id", id)
-    .single();
-
   const { error } = await supabase.from("portfolio_items").delete().eq("id", id);
   throwIfError(error);
-
-  if (item?.image_url) {
-    try {
-      const path = item.image_url.split('/').pop();
-      if (path) {
-        await supabase.storage.from("portfolio-images").remove([path]);
-      }
-    } catch {
-      // Ignore storage deletion errors
-    }
-  }
 }
 
 export async function uploadPortfolioImage(file: File): Promise<string> {
-  validateFile(file, 5);
-
   const ext = file.name.split(".").pop() ?? "jpg";
   const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("portfolio-images")
-    .upload(path, file, { 
-      upsert: false,
-      cacheControl: '3600',
-    });
-
+    .upload(path, file, { upsert: false });
   throwIfError(uploadError);
 
   const { data } = supabase.storage.from("portfolio-images").getPublicUrl(path);
@@ -183,90 +131,75 @@ export async function uploadPortfolioImage(file: File): Promise<string> {
 
 // ─── Testimonials ──────────────────────────────────────────────────────
 
+/** Admin-only: every testimonial, pending or approved. */
 export async function getTestimonials(): Promise<Testimonial[]> {
   const { data, error } = await supabase
     .from("testimonials")
     .select("*")
     .order("created_at", { ascending: false });
-
   throwIfError(error);
   return (data ?? []).map(mapTestimonial);
 }
 
+/** Public: only approved testimonials, for the Testimonials page. */
 export async function getApprovedTestimonials(): Promise<Testimonial[]> {
   const { data, error } = await supabase
     .from("testimonials")
     .select("*")
     .eq("approved", true)
     .order("created_at", { ascending: false });
-
   throwIfError(error);
   return (data ?? []).map(mapTestimonial);
 }
+
+export type NewTestimonial = Omit<Testimonial, "id" | "createdAt" | "approved">;
 
 export async function addTestimonial(t: NewTestimonial): Promise<Testimonial> {
   const { data, error } = await supabase
     .from("testimonials")
     .insert({
-      name: t.name.trim(),
-      company: t.company.trim(),
+      name: t.name,
+      company: t.company,
       rating: t.rating,
-      message: t.message.trim(),
+      message: t.message,
       avatar_url: t.avatarUrl ?? null,
       approved: false,
     })
     .select()
     .single();
-
   throwIfError(error);
   return mapTestimonial(data);
 }
 
-export async function updateTestimonialApproval(
-  id: string,
-  approved: boolean
-): Promise<void> {
-  const { error } = await supabase
-    .from("testimonials")
-    .update({ approved })
-    .eq("id", id);
-
-  throwIfError(error);
-}
-
-export async function deleteTestimonial(id: string): Promise<void> {
-  const { error } = await supabase.from("testimonials").delete().eq("id", id);
-  throwIfError(error);
-}
-
 // ─── Quote Requests ─────────────────────────────────────────────────────
 
+/** Admin-only. */
 export async function getQuoteRequests(): Promise<QuoteRequest[]> {
   const { data, error } = await supabase
     .from("quote_requests")
     .select("*")
     .order("created_at", { ascending: false });
-
   throwIfError(error);
   return (data ?? []).map(mapQuote);
 }
+
+export type NewQuoteRequest = Omit<QuoteRequest, "id" | "createdAt" | "status">;
 
 export async function addQuoteRequest(q: NewQuoteRequest): Promise<QuoteRequest> {
   const { data, error } = await supabase
     .from("quote_requests")
     .insert({
-      name: q.name.trim(),
-      email: q.email.trim().toLowerCase(),
-      phone: q.phone.trim(),
+      name: q.name,
+      email: q.email,
+      phone: q.phone,
       service: q.service,
-      details: q.details.trim(),
+      details: q.details,
       budget: q.budget,
       deadline: q.deadline,
       status: "new",
     })
     .select()
     .single();
-
   throwIfError(error);
   return mapQuote(data);
 }
@@ -275,134 +208,71 @@ export async function updateQuoteStatus(
   id: string,
   status: QuoteRequest["status"]
 ): Promise<void> {
-  const { error } = await supabase
-    .from("quote_requests")
-    .update({ status })
-    .eq("id", id);
-
-  throwIfError(error);
-}
-
-export async function deleteQuoteRequest(id: string): Promise<void> {
-  const { error } = await supabase.from("quote_requests").delete().eq("id", id);
+  const { error } = await supabase.from("quote_requests").update({ status }).eq("id", id);
   throwIfError(error);
 }
 
 // ─── Orders ──────────────────────────────────────────────────────────────
 
+/** Admin-only. */
 export async function getOrders(): Promise<Order[]> {
   const { data, error } = await supabase
     .from("orders")
     .select("*")
     .order("created_at", { ascending: false });
-
   throwIfError(error);
   return (data ?? []).map(mapOrder);
 }
+
+export type NewOrder = Omit<Order, "id" | "createdAt" | "status" | "total">;
 
 export async function addOrder(o: NewOrder): Promise<Order> {
   const { data, error } = await supabase
     .from("orders")
     .insert({
-      name: o.name.trim(),
-      email: o.email.trim().toLowerCase(),
-      phone: o.phone.trim(),
+      name: o.name,
+      email: o.email,
+      phone: o.phone,
       service: o.service,
       quantity: o.quantity,
       specifications: o.specifications,
-      delivery_address: o.deliveryAddress.trim(),
+      delivery_address: o.deliveryAddress,
       status: "pending",
     })
     .select()
     .single();
-
   throwIfError(error);
   return mapOrder(data);
 }
 
 export async function updateOrderStatus(id: string, status: Order["status"]): Promise<void> {
-  const { error } = await supabase
-    .from("orders")
-    .update({ status })
-    .eq("id", id);
-
-  throwIfError(error);
-}
-
-export async function deleteOrder(id: string): Promise<void> {
-  const { error } = await supabase.from("orders").delete().eq("id", id);
+  const { error } = await supabase.from("orders").update({ status }).eq("id", id);
   throwIfError(error);
 }
 
 // ─── Admin Auth ──────────────────────────────────────────────────────
 
 export async function adminLogin(password: string): Promise<{ ok: boolean; error?: string }> {
-  if (!ADMIN_EMAIL) {
-    return { ok: false, error: "Admin email not configured" };
-  }
-
   const { error } = await supabase.auth.signInWithPassword({
     email: ADMIN_EMAIL,
     password,
   });
-
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
 
 export async function adminLogout(): Promise<void> {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw new Error(error.message);
+  await supabase.auth.signOut();
 }
 
 export async function isAdminLoggedIn(): Promise<boolean> {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) return false;
+  const { data } = await supabase.auth.getSession();
   return !!data.session;
 }
 
 export function onAdminAuthStateChange(callback: (loggedIn: boolean) => void): () => void {
-  isAdminLoggedIn().then(callback).catch(() => callback(false));
-
   const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
     callback(!!session);
   });
-
   return () => sub.subscription.unsubscribe();
 }
-
-// ─── Export all functions for easier imports ──────────────────────────
-
-export default {
-  // Portfolio
-  getPortfolioItems,
-  addPortfolioItem,
-  updatePortfolioItem,
-  deletePortfolioItem,
-  uploadPortfolioImage,
-  
-  // Testimonials
-  getTestimonials,
-  getApprovedTestimonials,
-  addTestimonial,
-  updateTestimonialApproval,
-  deleteTestimonial,
-  
-  // Quote Requests
-  getQuoteRequests,
-  addQuoteRequest,
-  updateQuoteStatus,
-  deleteQuoteRequest,
-  
-  // Orders
-  getOrders,
-  addOrder,
-  updateOrderStatus,
-  deleteOrder,
-  
-  // Auth
-  adminLogin,
-  adminLogout,
-  isAdminLoggedIn,
-  onAdminAuthStateChange,
-};
