@@ -22,11 +22,9 @@ function throwIfError(error: { message: string } | null): asserts error is null 
 }
 
 function generateId(): string {
-  // Use crypto.randomUUID() if available, fallback to manual generation
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  // Fallback for older environments
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
 }
 
@@ -143,18 +141,15 @@ export async function updatePortfolioItem(
 }
 
 export async function deletePortfolioItem(id: string): Promise<void> {
-  // First, get the image URL to delete from storage
   const { data: item } = await supabase
     .from("portfolio_items")
     .select("image_url")
     .eq("id", id)
     .single();
 
-  // Delete from database
   const { error } = await supabase.from("portfolio_items").delete().eq("id", id);
   throwIfError(error);
 
-  // If there's an image, try to delete it from storage (fail silently)
   if (item?.image_url) {
     try {
       const path = item.image_url.split('/').pop();
@@ -162,17 +157,13 @@ export async function deletePortfolioItem(id: string): Promise<void> {
         await supabase.storage.from("portfolio-images").remove([path]);
       }
     } catch {
-      // Ignore storage deletion errors - the database record is already gone
+      // Ignore storage deletion errors
     }
   }
 }
 
-/**
- * Uploads an image file to the "portfolio-images" Supabase Storage bucket
- * and returns its public URL.
- */
 export async function uploadPortfolioImage(file: File): Promise<string> {
-  validateFile(file, 5); // 5MB max
+  validateFile(file, 5);
 
   const ext = file.name.split(".").pop() ?? "jpg";
   const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -192,7 +183,6 @@ export async function uploadPortfolioImage(file: File): Promise<string> {
 
 // ─── Testimonials ──────────────────────────────────────────────────────
 
-/** Admin-only: every testimonial, pending or approved. */
 export async function getTestimonials(): Promise<Testimonial[]> {
   const { data, error } = await supabase
     .from("testimonials")
@@ -203,7 +193,6 @@ export async function getTestimonials(): Promise<Testimonial[]> {
   return (data ?? []).map(mapTestimonial);
 }
 
-/** Public: only approved testimonials, for the Testimonials page. */
 export async function getApprovedTestimonials(): Promise<Testimonial[]> {
   const { data, error } = await supabase
     .from("testimonials")
@@ -252,7 +241,6 @@ export async function deleteTestimonial(id: string): Promise<void> {
 
 // ─── Quote Requests ─────────────────────────────────────────────────────
 
-/** Admin-only. */
 export async function getQuoteRequests(): Promise<QuoteRequest[]> {
   const { data, error } = await supabase
     .from("quote_requests")
@@ -302,7 +290,6 @@ export async function deleteQuoteRequest(id: string): Promise<void> {
 
 // ─── Orders ──────────────────────────────────────────────────────────────
 
-/** Admin-only. */
 export async function getOrders(): Promise<Order[]> {
   const { data, error } = await supabase
     .from("orders")
@@ -347,7 +334,7 @@ export async function deleteOrder(id: string): Promise<void> {
   throwIfError(error);
 }
 
-// ─── Admin Auth (real Supabase Auth session, not a localStorage flag) ──
+// ─── Admin Auth ──────────────────────────────────────────────────────
 
 export async function adminLogin(password: string): Promise<{ ok: boolean; error?: string }> {
   if (!ADMIN_EMAIL) {
@@ -374,9 +361,7 @@ export async function isAdminLoggedIn(): Promise<boolean> {
   return !!data.session;
 }
 
-/** Fires immediately with the current state, then on every change. */
 export function onAdminAuthStateChange(callback: (loggedIn: boolean) => void): () => void {
-  // Call immediately with current state
   isAdminLoggedIn().then(callback).catch(() => callback(false));
 
   const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -385,39 +370,3 @@ export function onAdminAuthStateChange(callback: (loggedIn: boolean) => void): (
 
   return () => sub.subscription.unsubscribe();
 }
-
-// ─── Export all functions for easier imports ──────────────────────────
-
-export default {
-  // Portfolio
-  getPortfolioItems,
-  addPortfolioItem,
-  updatePortfolioItem,
-  deletePortfolioItem,
-  uploadPortfolioImage,
-  
-  // Testimonials
-  getTestimonials,
-  getApprovedTestimonials,
-  addTestimonial,
-  updateTestimonialApproval,
-  deleteTestimonial,
-  
-  // Quote Requests
-  getQuoteRequests,
-  addQuoteRequest,
-  updateQuoteStatus,
-  deleteQuoteRequest,
-  
-  // Orders
-  getOrders,
-  addOrder,
-  updateOrderStatus,
-  deleteOrder,
-  
-  // Auth
-  adminLogin,
-  adminLogout,
-  isAdminLoggedIn,
-  onAdminAuthStateChange,
-};
